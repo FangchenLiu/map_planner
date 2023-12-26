@@ -9,6 +9,8 @@ from algos.dqn_agent import dqn_agent
 from goal_env import *
 import random
 import torch
+from tensorboardX import SummaryWriter
+writer = SummaryWriter()
 
 def get_env_params(env):
     obs = env.reset()
@@ -25,7 +27,6 @@ def get_env_params(env):
 
 def launch(args):
     env = gym.make(args.env_name)
-    test_env = gym.make(args.test)
     # set random seeds for reproduce
     env.seed(args.seed)
     random.seed(args.seed)
@@ -35,11 +36,11 @@ def launch(args):
         torch.cuda.manual_seed(args.seed)
     # get the environment parameters
     env_params = get_env_params(env)
-    env_params['max_test_timesteps'] = test_env._max_episode_steps
     from algos.dqn_agent import dqn_agent
-    dqn_agent = dqn_agent(args, env, env_params, test_env, resume=args.resume, resume_epoch=args.resume_epoch)
+    dqn_agent = dqn_agent(args, env, env_params, writer)
     dqn_agent.learn()
 
 if __name__ == '__main__':
+    # get the params
     args = get_args()
     launch(args)

@@ -1,16 +1,16 @@
 import numpy as np
 
 class her_sampler:
-    def __init__(self, replay_strategy, replay_k, distance):
+    def __init__(self, replay_strategy, replay_k, threshold, future_step=300):
         self.replay_strategy = replay_strategy
         self.replay_k = replay_k
         if self.replay_strategy == 'future':
             self.future_p = 1 - (1. / (1 + replay_k))
         else:
             self.future_p = 0
-        self.threshold = distance
-        self.furture_step = 200
-        print('within her', self.threshold, self.furture_step)
+        self.threshold = threshold
+        self.furture_step = future_step
+        print('Sample in future stepes', self.furture_step)
 
     def reward_func(self, state, goal, info=None):
         assert state.shape == goal.shape
@@ -42,3 +42,4 @@ class her_sampler:
         transitions = {k: transitions[k].reshape(batch_size, *transitions[k].shape[1:]) for k in transitions.keys()}
 
         return transitions
+

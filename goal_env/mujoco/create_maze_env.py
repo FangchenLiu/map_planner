@@ -1,14 +1,11 @@
 from .ant_maze_env import AntMazeEnv
 from .point_maze_env import PointMazeEnv
-from .ant_maze_env import AntMazeEnv
-from .point_maze_env import PointMazeEnv
 from collections import OrderedDict
 import gym
 import numpy as np
 import copy
 from gym import Wrapper
 from gym.envs.registration import EnvSpec
-
 
 class GoalWrapper(Wrapper):
     def __init__(self, env, max_timestep, maze_size_scaling, random_start, low, high):
@@ -22,14 +19,13 @@ class GoalWrapper(Wrapper):
         self.maze_size_scaling = maze_size_scaling
         self.goal_space = gym.spaces.Box(low=low, high=high)
         self.maze_space = gym.spaces.Box(low=maze_low, high=maze_high)
-        #print(self.maze_space.low, self.maze_space.high, self.goal_space.low, self.goal_space.high)
+
         self.goal_dim = low.size
         self.distance_threshold = 5 * maze_size_scaling/8.
+
+        # the id is not important
         self.spec = EnvSpec(id='PointMaze-v0', timestep_limit=max_timestep)
 
-        self.distance = 5 * maze_size_scaling/8.
-        #print(self.goal_space, low.size)
-        #exit(0)
         self.observation_space = gym.spaces.Dict(OrderedDict({
             'observation': ob_space,
             'desired_goal': self.goal_space,
@@ -44,7 +40,7 @@ class GoalWrapper(Wrapper):
                'desired_goal': self.goal,
                'achieved_goal': observation[..., :self.goal_dim]}
         reward = -np.linalg.norm(observation[..., :self.goal_dim] - self.goal, axis=-1)
-        info['is_success'] = (reward > -self.distance)
+        info['is_success'] = (reward > -self.distance_threshold)
         reward = self.compute_rew(observation[..., :self.goal_dim], self.goal, '...')
         return out, reward, done, info
 
@@ -53,14 +49,15 @@ class GoalWrapper(Wrapper):
         self.goal = self.goal_space.sample()
         while(self.env._is_in_collision(self.goal)):
             self.goal = self.goal_space.sample()
-        #exit(0)
+
+        # random start a position without collision
         if self.random_start:
             xy = self.maze_space.sample()
             while(self.env._is_in_collision(xy)):
                 xy = self.maze_space.sample()
             self.env.wrapped_env.set_xy(xy)
             observation = self.env._get_obs()
-        #print(self.goal, observation, self.maze_space.low, self.maze_space.high)
+
         out = {'observation': observation, 'desired_goal': self.goal}
         out['achieved_goal'] = observation[..., :self.goal_dim]
         return out
@@ -69,7 +66,6 @@ class GoalWrapper(Wrapper):
         assert state.shape == goal.shape
         dist =  np.linalg.norm(state - goal, axis=-1)
         return -(dist > self.distance_threshold).astype(np.float32)
-
 
 def create_maze_env(env_name=None, top_down_view=False, max_timestep=300, maze_size_scaling=8, random_start=True, goal_args=[]):
     n_bins = 0

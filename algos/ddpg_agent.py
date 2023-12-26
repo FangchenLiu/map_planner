@@ -15,18 +15,18 @@ from planner.vis_pointmaze import vis_pointmaze
 from planner.goal_plan import *
 
 class ddpg_agent:
-    def __init__(self, args, env, env_params, test_env, resume=False, resume_epoch_actor=0, resume_epoch_critic=0):
+    def __init__(self, args, env, env_params, test_env):
         self.args = args
         self.env = env
         self.test_env = test_env
         self.env_params = env_params
         self.device = args.device
-        self.resume = resume
-        self.resume_epoch_actor = resume_epoch_actor
-        self.resume_epoch_critic = resume_epoch_critic
+        self.resume = args.resume
+        self.resume_epoch_actor = args.resume_epoch
+        self.resume_epoch_critic = args.resume_epoch
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
         self.writer = SummaryWriter(log_dir='runs/ddpg'+current_time + '_' + str(args.env_name) + \
-                                            str(args.lr_critic)+'_' + str(args.gamma)+'_'+str(args.plan_rate)+'_'+\
+                                            str(args.lr_critic)+'_' + str(args.gamma)+'_'+\
                                             str(args.fps))
         if not os.path.exists(self.args.save_dir):
             os.mkdir(self.args.save_dir)
@@ -35,11 +35,15 @@ class ddpg_agent:
         if not os.path.exists(self.model_path):
             os.mkdir(self.model_path)
         self.actor_network = actor(env_params)
-        self.plan_rate = args.plan_rate
-        self.init_critics()
         self.actor_target_network = actor(env_params)
+        self.critic_network = criticWrapper(self.env_params, self.args)
+        self.critic_target_network = criticWrapper(self.env_params, self.args)
+
         if self.resume == True:
-            self.actor_network.load_state_dict(torch.load(self.args.path + '/actor_model_' +str(self.resume_epoch_actor) +'.pt')[0])
+            self.actor_network.load_state_dict(torch.load(self.args.resume_path + \
+                                                          '/actor_model_' +str(self.resume_epoch_actor) +'.pt')[0])
+            self.critic_network.load_state_dict(torch.load(self.args.resume_path + \
+                                                           '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
         # load the weights into the target networks
         self.actor_target_network.load_state_dict(self.actor_network.state_dict())
         self.critic_target_network.load_state_dict(self.critic_network.state_dict())
@@ -51,35 +55,13 @@ class ddpg_agent:
         # create the optimizer
 
         self.actor_optim = torch.optim.Adam(self.actor_network.parameters(), lr=self.args.lr_actor)
-        if self.args.search == True:
-            print('here true')
-            self.critic_optim = torch.optim.Adam([
-                {'params': self.critic_network.base.parameters()},
-                {'params': self.critic_network.gamma, 'lr': 5e-5}
-            ], lr=self.args.lr_critic)
-        else:
-            self.critic_optim = torch.optim.Adam(self.critic_network.parameters(), lr=self.args.lr_critic)
+        self.critic_optim = torch.optim.Adam(self.critic_network.parameters(), lr=self.args.lr_critic)
         # her sampler
         self.her_module = her_sampler(self.args.replay_strategy, self.args.replay_k, self.args.distance)
         # create the replay buffer
         self.buffer = replay_buffer(self.env_params, self.args.buffer_size, self.her_module.sample_her_transitions)
-        if args.fps == 1:
-            self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=True, \
+        self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=args.fps, \
                                           clip_v=args.clip_v, n_landmark=args.landmark, initial_sample=args.initial_sample)
-        else:
-            self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=False, \
-                                          clip_v=args.clip_v, n_landmark=args.landmark, initial_sample=args.initial_sample)
-
-    def init_critics(self):
-        if self.args.network == 'critic':
-            self.critic_network = criticWrapper(self.env_params, self.args)
-            self.critic_target_network = criticWrapper(self.env_params, self.args)
-        elif self.args.network == 'embed':
-            self.critic_network = EmbedNetWrapper(self.env_params, self.args)
-            self.critic_target_network = EmbedNetWrapper(self.env_params, self.args)
-        if self.resume == True:
-            self.critic_network.load_state_dict(torch.load(self.args.path + '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
-            self.critic_target_network.load_state_dict(torch.load(self.args.path + '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
 
     def adjust_lr_actor(self, epoch):
         lr_actor = self.args.lr_actor * (0.5 ** (epoch // self.args.lr_decay_actor))
@@ -93,11 +75,11 @@ class ddpg_agent:
 
     def learn(self):
         for epoch in range(self.args.resume_epoch, self.args.n_epochs):
-            if epoch > 1900 and epoch % self.args.lr_decay_actor == 0:
+            if epoch > 2000 and epoch % self.args.lr_decay_actor == 0:
                 self.adjust_lr_actor(epoch)
             if epoch > 2000 and epoch % self.args.lr_decay_critic == 0:
                 self.adjust_lr_critic(epoch)
-            mb_obs, mb_ag, mb_g, mb_actions = [], [], [], []
+
             ep_obs, ep_ag, ep_g, ep_actions = [], [], [], []
             observation = self.env.reset()
             obs = observation['observation']
@@ -107,7 +89,7 @@ class ddpg_agent:
             for t in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
-                    action = self.explore_policy(act_obs, act_g, epoch)
+                    action = self.explore_policy(act_obs, act_g)
                     # feed the actions into the environment
                 observation_new, _, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
@@ -156,7 +138,7 @@ class ddpg_agent:
         return obs, g
 
     # this function will choose action for the agent and do the exploration
-    def _select_actions(self, pi, epoch):
+    def _select_actions(self, pi):
         action = pi.cpu().numpy().squeeze()
         # add the gaussian
         action += self.args.noise_eps * self.env_params['action_max'] * np.random.randn(*action.shape)
@@ -167,9 +149,9 @@ class ddpg_agent:
                                            size=self.env_params['action'])
         return action
 
-    def explore_policy(self, obs, goal, epoch):
+    def explore_policy(self, obs, goal):
         pi = self.actor_network(obs, goal)
-        action = self._select_actions(pi, epoch)
+        action = self._select_actions(pi)
         return action
 
     def random_policy(self, obs, goal):
@@ -245,11 +227,7 @@ class ddpg_agent:
 
     # do the evaluation
     def _eval_agent(self, policy=None):
-        if policy is not None:
-            policy = policy
-        elif self.args.plan_rate > 0:
-            policy = self.planner_policy
-        else:
+        if policy is None:
             policy = self.test_policy
 
         total_success_rate = []

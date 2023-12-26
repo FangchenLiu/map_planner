@@ -28,7 +28,6 @@ class dqn_agent:
         self.resume_epoch = resume_epoch
         self.init_qnets()
         if self.resume == True:
-            print('resume')
             self.Q_network.load_state_dict(
                 torch.load(self.args.path + '/q_model_' + str(self.resume_epoch) + '.pt')[0])
             self.targetQ_network.load_state_dict(
@@ -183,75 +182,11 @@ class dqn_agent:
         td_loss.backward()
         self.q_optim.step()
 
-    # do the evaluation
-    def _eval_agent(self, policy=None):
-        #print('evaluation start')
-        num_success = 0
-        num_step = 0
-        policy = self.test_policy
-
-        for _ in range(self.args.n_test_rollouts):
-            observation = self.test_env.reset()
-            obs = observation['observation']
-            g = observation['desired_goal']
-            # print('___start___')
-            for t in range(self.env_params['max_timesteps']):
-                with torch.no_grad():
-                    act_obs, act_g = self._preproc_inputs(obs, g)
-                    actions = self.test_policy(act_obs, act_g)
-                observation_new, reward, done, info = self.test_env.step(actions.squeeze(0))
-                obs = observation_new['observation']
-                g = observation_new['desired_goal']
-                # print("obs, action", obs[:2], actions)
-                if done:
-                    if info['is_success'] == True:
-                        num_success += 1
-                        num_step += t
-                    break
-        success_rate = num_success / self.args.n_test_rollouts
-        if num_success == 0:
-            step_cnt = 200
-        else:
-            step_cnt = num_step / num_success
-        print(step_cnt, 'her')
-        return success_rate
-
-    def _eval_test_agent(self, policy=None):
-        if policy is None:
-            policy = self.planner_policy
-            self.planner_policy.reset()
-        num_success = 0
-        num_step = 0
-        for _ in range(self.args.n_test_rollouts):
-            observation = self.test_env.reset()
-            obs = observation['observation']
-            g = observation['desired_goal']
-            for t in range(self.env_params['max_test_timesteps']):
-                with torch.no_grad():
-                    act_obs, act_g = self._preproc_inputs(obs, g)
-                    actions = policy(act_obs, act_g)
-                observation_new, rew, done, info = self.test_env.step(actions.squeeze(0))
-                obs = observation_new['observation']
-                g = observation_new['desired_goal']
-                if done:
-                    if info['is_success'] == True:
-                        num_success += 1
-                        num_step += t
-                    break
-        success_rate = num_success / self.args.n_test_rollouts
-        if num_success == 0:
-            step_cnt = 200
-        else:
-            step_cnt = num_step / num_success
-        print(step_cnt, 'planner')
-        return success_rate
-
     '''
     def _eval_agent(self, policy=None):
         if policy is None:
             policy = self.planner_policy
             self.planner_policy.reset()
-
         total_success_rate = []
         for _ in range(self.args.n_test_rollouts):
             per_success_rate = []
@@ -273,13 +208,12 @@ class dqn_agent:
         total_success_rate = np.array(total_success_rate)
         global_success_rate = np.mean(total_success_rate[:, -1])
         return global_success_rate
-
+        
     def _eval_test_agent(self, policy=None):
         total_success_rate = []
         if policy is None:
             policy = self.planner_policy
             self.planner_policy.reset()
-
         for _ in range(self.args.n_test_rollouts):
             per_success_rate = []
             self.planner_policy.reset()
@@ -301,25 +235,6 @@ class dqn_agent:
         global_success_rate = np.mean(total_success_rate[:, -1])
         return global_success_rate
     '''
-    def play(self):
-        print('evaluation start')
-        for _ in range(1):
-            observation = self.env.reset()
-            obs = observation['observation']
-            g = observation['desired_goal']
-            # print('___start___')
-            for _ in range(self.env_params['max_timesteps']):
-                self.env.render()
-                with torch.no_grad():
-                    act_obs, act_g = self._preproc_inputs(obs, g)
-                    actions = self.planner_policy(act_obs, act_g)
-                observation_new, reward, done, info = self.env.step(actions.squeeze(0))
-                obs = observation_new['observation']
-                g = observation_new['desired_goal']
-                # print("obs, action", obs[:2], actions)
-                if done:
-                    break
-            self.env.close()
 
     def pairwise_value(self, obs, goal):
         assert obs.shape[0] == goal.shape[0]

@@ -2,11 +2,10 @@ import cv2
 import torch
 import numpy as np
 
-
+## This is used to store a video for remote visualization
 def play(env, policy, video_path="tmp.avi", time_limit=500, device='cpu'):
     out = None
     obs = env.reset()
-    print(obs)
     num = 0
 
     rew = None
@@ -15,6 +14,7 @@ def play(env, policy, video_path="tmp.avi", time_limit=500, device='cpu'):
     flag = False
     while True:
         img = env.unwrapped.render(mode='rgb_array')[:, :, ::-1].copy()
+        '''
         if True and isinstance(obs, dict):
             np.set_printoptions(precision=3)
             achieved = (float(obs['achieved_goal'][0]), float(obs['achieved_goal'][1]))
@@ -32,6 +32,7 @@ def play(env, policy, video_path="tmp.avi", time_limit=500, device='cpu'):
                     cv2.putText(img, "success? {}".format(info['is_success']), (400,125), cv2.FONT_HERSHEY_SIMPLEX, 0.3, 255)
             cv2.putText(img, "step {}".format(num), (400,150), cv2.FONT_HERSHEY_SIMPLEX, 0.3, 255)
             flag = True
+        '''
         if out is None:
             out = cv2.VideoWriter(
                     video_path, cv2.VideoWriter_fourcc(*'XVID'), 20.0, (img.shape[1], img.shape[0]))
@@ -48,8 +49,8 @@ def play(env, policy, video_path="tmp.avi", time_limit=500, device='cpu'):
         if done:
             obs = env.reset()
         num += 1
-        flag = True
         #assert not info['is_success']
+        flag = True
         if not flag:
             print(num, info, rew, done, env.goal, action)
         if num == time_limit - 1:

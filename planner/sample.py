@@ -1,13 +1,14 @@
+# farthest point sampling based on l2
 import numpy as np
 from numpy import random
 import torch
 from matplotlib import pyplot as plt
 import seaborn as sns
 
-def farthest_point_sample(data, K=1000, basis=None, eps=1e-3, inf=100000):
+def farthest_point_sample(data, K=1000, basis=None, eps=1e-3, inf=100000, device="cpu"):
     input_np = 0
     if isinstance(data, np.ndarray):
-        data = torch.Tensor(data).cuda()
+        data = torch.Tensor(data).to(device)
         input_np = 1
 
     data_ = data.view(len(data), -1)

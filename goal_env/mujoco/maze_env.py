@@ -132,7 +132,6 @@ class MazeEnv(gym.Env):
                     # The "falling" blocks are shrunk slightly and increased in mass to
                     # ensure that it can fall easily through a gap in the platform blocks.
                     name = "movable_%d_%d" % (i, j)
-                    print(self._rowcol_to_xy(2, 2), self._rowcol_to_xy(2, 0), self._rowcol_to_xy(j, i))
                     self.movable_blocks.append((name, struct))
                     falling = maze_env_utils.can_move_z(struct)
                     spinning = maze_env_utils.can_spin(struct)

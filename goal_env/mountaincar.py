@@ -12,12 +12,12 @@ class MountainCarEnv(gym.Env):
         'video.frames_per_second': 30
     }
 
-    def __init__(self, goal_dim=1, fix=True):
+    def __init__(self, goal_dim=1):
         self.min_position = -1.2
         self.max_position = 0.6
         self.max_speed = 0.07
         self.goal_position = 0.5
-        self.fix = fix
+
         self.force = 0.001
         self.gravity = 0.0025
 
@@ -71,10 +71,7 @@ class MountainCarEnv(gym.Env):
         #return np.array(self.state), reward, done, {}
 
     def reset(self):
-        if self.fix:
-            self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
-        else:
-            self.state = np.array([self.np_random.uniform(low=-1.0, high=0.4), 0])
+        self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
         return self.get_obs()
         #return np.array(self.state)
 

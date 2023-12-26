@@ -2,7 +2,6 @@ from mpi4py import MPI
 import numpy as np
 import torch
 
-
 # sync_networks across the different cores
 def sync_networks(network):
     """
@@ -14,20 +13,18 @@ def sync_networks(network):
     # set the flat params back to the network
     _set_flat_params(network, params_shape, flat_params)
 
-
 # get the flat params from the network
 def _get_flat_params(network):
     param_shape = {}
     flat_params = None
     for key_name, value in network.named_parameters():
-        # print(key_name, value)
+        #print(key_name, value)
         param_shape[key_name] = value.detach().numpy().shape
         if flat_params is None:
             flat_params = value.detach().numpy().flatten()
         else:
             flat_params = np.append(flat_params, value.detach().numpy().flatten())
     return flat_params, param_shape
-
 
 # set the params from the network
 def _set_flat_params(network, params_shape, params):
@@ -42,7 +39,6 @@ def _set_flat_params(network, params_shape, params):
         # update the pointer
         pointer += len_param
 
-
 # sync the networks
 def sync_grads(network):
     flat_grads, grads_shape = _get_flat_grads(network)
@@ -50,7 +46,6 @@ def sync_grads(network):
     global_grads = np.zeros_like(flat_grads)
     comm.Allreduce(flat_grads, global_grads, op=MPI.SUM)
     _set_flat_grads(network, grads_shape, global_grads)
-
 
 def _set_flat_grads(network, grads_shape, flat_grads):
     pointer = 0
@@ -62,7 +57,6 @@ def _set_flat_grads(network, grads_shape, flat_grads):
         value.grad.data.copy_(copy_grads.data)
         pointer += len_grads
 
-
 def _get_flat_grads(network):
     grads_shape = {}
     flat_grads = None
@@ -73,8 +67,3 @@ def _get_flat_grads(network):
         else:
             flat_grads = np.append(flat_grads, value.grad.data.cpu().numpy().flatten())
     return flat_grads, grads_shape
-
-
-if __name__ == '__main__':
-    # get the params
-    print('test')

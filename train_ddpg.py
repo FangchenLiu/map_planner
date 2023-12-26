@@ -1,24 +1,25 @@
 import numpy as np
 import gym
 import os, sys
-from arguments_ddpg import *
+from arguments_ddpg import get_args
 from algos.ddpg_agent import ddpg_agent
-from algos.networks import *
 from goal_env import *
 from goal_env.mujoco import *
 import random
 import torch
 from gym import Wrapper
-from gym.envs.registration import EnvSpec
+
 def get_env_params(env):
     obs = env.reset()
     # close the environment
+    print(obs)
     params = {'obs': obs['observation'].shape[0],
-            'goal': obs['desired_goal'].shape[0],
-            'action': env.action_space.shape[0],
-            'action_max': env.action_space.high[0],
-            }
+              'goal': obs['desired_goal'].shape[0],
+              'action': env.action_space.shape[0],
+              'action_max': env.action_space.high[0],
+              }
     params['max_timesteps'] = env._max_episode_steps
+    print(params)
     return params
 
 
@@ -37,13 +38,11 @@ def launch(args):
     env_params = get_env_params(env)
     env_params['max_test_timesteps'] = test_env._max_episode_steps
     # create the ddpg agent to interact with the environment
-    vae_net = VAE(state_dim=2, latent_dim=128)
-    ddpg_trainer = ddpg_agent(args, env, env_params, test_env, vae_net, \
-                              resume=args.resume, resume_epoch_actor=args.resume_epoch, resume_epoch_critic=args.resume_epoch)
+    ddpg_trainer = ddpg_agent(args, env, env_params, test_env)
     ddpg_trainer.learn()
 
 if __name__ == '__main__':
     # get the params
     args = get_args()
-    print('training point maze')
+    print(args.resume, args.fps)
     launch(args)

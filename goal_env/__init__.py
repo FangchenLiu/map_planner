@@ -56,33 +56,7 @@ register(
 register(
     id='mcar-v0',
     entry_point='goal_env.mountaincar:MountainCarEnv',
-    kwargs={'goal_dim':2, 'fix':False},
-    max_episode_steps=200,
-    reward_threshold=100.0,
-    nondeterministic = False,
-)
-
-register(
-    id='mcar-v1',
-    entry_point='goal_env.mountaincar:MountainCarEnv',
-    kwargs={'goal_dim':2, 'fix':True},
-    max_episode_steps=200,
-    reward_threshold=100.0,
-    nondeterministic = False,
-)
-
-register(
-    id='acbot-v0',
-    entry_point='goal_env.acrobot:AcrobotEnv',
-    kwargs={'random_start':True},
-    max_episode_steps=200,
-    reward_threshold=100.0,
-    nondeterministic = False,
-)
-register(
-    id='acbot-v1',
-    entry_point='goal_env.acrobot:AcrobotEnv',
-    kwargs={'random_start':False},
+    kwargs={'goal_dim':1},
     max_episode_steps=200,
     reward_threshold=100.0,
     nondeterministic = False,
