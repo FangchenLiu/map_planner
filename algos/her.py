@@ -10,7 +10,7 @@ class her_sampler:
             self.future_p = 0
         self.threshold = threshold
         self.furture_step = future_step
-        print('Sample in future stepes', self.furture_step)
+        print('Sample in future steps', self.furture_step)
 
     def reward_func(self, state, goal, info=None):
         assert state.shape == goal.shape

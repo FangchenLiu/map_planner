@@ -53,7 +53,7 @@ class ddpg_agent:
         self.actor_optim = torch.optim.Adam(self.actor_network.parameters(), lr=self.args.lr_actor)
         self.critic_optim = torch.optim.Adam(self.critic_network.parameters(), lr=self.args.lr_critic)
         # her sampler
-        self.her_module = her_sampler(self.args.replay_strategy, self.args.replay_k, self.args.distance)
+        self.her_module = her_sampler(self.args.replay_strategy, self.args.replay_k, self.args.distance, self.args.future_step)
         # create the replay buffer
         self.buffer = replay_buffer(self.env_params, self.args.buffer_size, self.her_module.sample_her_transitions)
         self.planner_policy = Planner(agent=self, replay_buffer=self.buffer, fps=args.fps, \
@@ -140,7 +140,7 @@ class ddpg_agent:
         action += self.args.noise_eps * self.env_params['action_max'] * np.random.randn(*action.shape)
         action = np.clip(action, -self.env_params['action_max'], self.env_params['action_max'])
         # random actions...
-        if np.random.randn() < 0.2:
+        if np.random.randn() < self.args.random_eps:
             action = np.random.uniform(low=-self.env_params['action_max'], high=self.env_params['action_max'], \
                                            size=self.env_params['action'])
         return action
@@ -255,6 +255,7 @@ class ddpg_agent:
 
         total_success_rate = []
         for _ in range(self.args.n_test_rollouts):
+            policy.reset()
             per_success_rate = []
             observation = self.test_env.reset()
             obs = observation['observation']

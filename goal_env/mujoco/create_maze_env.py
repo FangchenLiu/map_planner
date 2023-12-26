@@ -8,7 +8,7 @@ from gym import Wrapper
 from gym.envs.registration import EnvSpec
 
 class GoalWrapper(Wrapper):
-    def __init__(self, env, max_timestep, maze_size_scaling, random_start, low, high):
+    def __init__(self, env, maze_size_scaling, random_start, low, high):
         super(GoalWrapper, self).__init__(env)
         ob_space = env.observation_space
         self.maze_size_scaling = maze_size_scaling
@@ -22,9 +22,6 @@ class GoalWrapper(Wrapper):
 
         self.goal_dim = low.size
         self.distance_threshold = 5 * maze_size_scaling/8.
-
-        # the id is not important
-        self.spec = EnvSpec(id='PointMaze-v0', timestep_limit=max_timestep)
 
         self.observation_space = gym.spaces.Dict(OrderedDict({
             'observation': ob_space,
@@ -67,7 +64,7 @@ class GoalWrapper(Wrapper):
         dist =  np.linalg.norm(state - goal, axis=-1)
         return -(dist > self.distance_threshold).astype(np.float32)
 
-def create_maze_env(env_name=None, top_down_view=False, max_timestep=300, maze_size_scaling=8, random_start=True, goal_args=[]):
+def create_maze_env(env_name=None, top_down_view=False, maze_size_scaling=8, random_start=True, goal_args=[]):
     n_bins = 0
     manual_collision = False
     if env_name.startswith('Ego'):
@@ -120,4 +117,4 @@ def create_maze_env(env_name=None, top_down_view=False, max_timestep=300, maze_s
     gym_env = cls(**gym_mujoco_kwargs)
     gym_env.reset()
     goal_args = np.array(goal_args) / 8 * maze_size_scaling
-    return GoalWrapper(gym_env, max_timestep, maze_size_scaling, random_start, *goal_args)
+    return GoalWrapper(gym_env, maze_size_scaling, random_start, *goal_args)

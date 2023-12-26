@@ -2,16 +2,18 @@
 Our method is designed for goal-reaching problem, in which we combine low-level RL policy with search on a graph-based environment map.
 
 ## Paper
-This paper is accepted by NeurIPS 2019. For more details, please refer to [this link](http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching).
+This paper is accepted by NeurIPS 2019. For more details, please refer to [our paper](http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching).
 
 ## Run
-We provide the scripts for PointMaze and AntMaze. 
+We provide the scripts for 2DPlane, PointMaze and AntMaze. 
 ```bash
+./scripts/train_2dplane.sh
 ./scripts/train_pointmaze.sh
 ./scripts/train_antmaze.sh
 ```
 You can also customize your own environments and find suitable parameters.
-The environments can be found in ``./goal_env``.
+
+The goal reaching environments can be found in ``./goal_env``.
 
 ## Cite Our Paper
 If you find it useful, please consider to cite our paper.

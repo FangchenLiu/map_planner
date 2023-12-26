@@ -15,6 +15,7 @@ def get_args():
     parser.add_argument('--seed', type=int, default=123, help='random seed')
 
     parser.add_argument('--replay-strategy', type=str, default='future', help='the HER strategy')
+    parser.add_argument('--future-step', type=int, default=200, help='future step to be sampled')
     parser.add_argument('--save-dir', type=str, default='saved_models/', help='the path to save the models')
     parser.add_argument('--buffer-size', type=int, default=int(1e6), help='the size of the buffer')
     parser.add_argument('--replay-k', type=int, default=4, help='ratio to be replace')
@@ -33,8 +34,8 @@ def get_args():
 
     parser.add_argument('--resume', action='store_true', help='resume or not')
     # Will be considered only if resume is True
-    parser.add_argument('--resume_epoch', type=int, default=10000, help='resume epoch')
-    parser.add_argument('--resume_path', type=str, default='saved_models/AntMazeTest-v1_May23_04-14-15', help='resume path')
+    parser.add_argument('--resume-epoch', type=int, default=10000, help='resume epoch')
+    parser.add_argument('--resume-path', type=str, default='saved_models/AntMazeTest-v1_May23_04-14-15', help='resume path')
 
     #args for the planner
     parser.add_argument('--fps', action='store_true', help='if use fps in the planner')
