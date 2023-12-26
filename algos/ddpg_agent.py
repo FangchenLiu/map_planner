@@ -22,8 +22,7 @@ class ddpg_agent:
         self.env_params = env_params
         self.device = args.device
         self.resume = args.resume
-        self.resume_epoch_actor = args.resume_epoch
-        self.resume_epoch_critic = args.resume_epoch
+        self.resume_epoch = args.resume_epoch
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
         self.writer = SummaryWriter(log_dir='runs/ddpg'+current_time + '_' + str(args.env_name) + \
                                             str(args.lr_critic)+'_' + str(args.gamma)+'_'+\
@@ -39,11 +38,13 @@ class ddpg_agent:
         self.critic_network = criticWrapper(self.env_params, self.args)
         self.critic_target_network = criticWrapper(self.env_params, self.args)
 
+        self.start_epoch = 0
         if self.resume == True:
+            self.start_epoch = self.resume_epoch
             self.actor_network.load_state_dict(torch.load(self.args.resume_path + \
-                                                          '/actor_model_' +str(self.resume_epoch_actor) +'.pt')[0])
+                                                          '/actor_model_' +str(self.resume_epoch) +'.pt')[0])
             self.critic_network.load_state_dict(torch.load(self.args.resume_path + \
-                                                           '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
+                                                           '/critic_model_' +str(self.resume_epoch) +'.pt')[0])
         # load the weights into the target networks
         self.actor_target_network.load_state_dict(self.actor_network.state_dict())
         self.critic_target_network.load_state_dict(self.critic_network.state_dict())
@@ -74,7 +75,7 @@ class ddpg_agent:
             param_group['lr'] = lr_critic
 
     def learn(self):
-        for epoch in range(self.args.resume_epoch, self.args.n_epochs):
+        for epoch in range(self.start_epoch, self.args.n_epochs):
             if epoch > 2000 and epoch % self.args.lr_decay_actor == 0:
                 self.adjust_lr_actor(epoch)
             if epoch > 2000 and epoch % self.args.lr_decay_critic == 0:

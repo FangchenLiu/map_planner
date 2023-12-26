@@ -27,7 +27,9 @@ class dqn_agent:
         self.resume = args.resume
         self.resume_epoch = args.resume_epoch
         self.init_qnets()
+        self.start_epoch = 0
         if self.resume == True:
+            self.start_epoch = self.resume_epoch
             print('resume from stored models ...')
             self.Q_network.load_state_dict(
                 torch.load(self.args.path + '/q_model_' + str(self.resume_epoch) + '.pt')[0])
@@ -61,7 +63,7 @@ class dqn_agent:
 
 
     def learn(self):
-        for epoch in range(self.args.n_epochs):
+        for epoch in range(self.start_epoch, self.args.n_epochs):
             mb_obs, mb_ag, mb_g, mb_actions = [], [], [], []
             ep_obs, ep_ag, ep_g, ep_actions = [], [], [], []
             observation = self.env.reset()

@@ -44,5 +44,4 @@ def launch(args):
 if __name__ == '__main__':
     # get the params
     args = get_args()
-    print(args.resume, args.fps)
     launch(args)
