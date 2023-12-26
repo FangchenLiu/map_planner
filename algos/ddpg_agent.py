@@ -60,7 +60,7 @@ class ddpg_agent:
         self.her_module = her_sampler(self.args.replay_strategy, self.args.replay_k, self.args.distance)
         # create the replay buffer
         self.buffer = replay_buffer(self.env_params, self.args.buffer_size, self.her_module.sample_her_transitions)
-        self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=args.fps, \
+        self.planner_policy = Planner(agent=self, replay_buffer=self.buffer, fps=args.fps, \
                                           clip_v=args.clip_v, n_landmark=args.landmark, initial_sample=args.initial_sample)
 
     def adjust_lr_actor(self, epoch):
@@ -255,7 +255,7 @@ class ddpg_agent:
     def _eval_test_agent(self, policy=None):
         if policy is None:
             policy = self.planner_policy
-            self.planner_policy.reset()
+            policy.reset()
 
         total_success_rate = []
         for _ in range(self.args.n_test_rollouts):

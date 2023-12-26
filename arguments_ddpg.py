@@ -12,7 +12,6 @@ def get_args():
     parser.add_argument('--test', type=str, default='GoalPlane-v0')
     parser.add_argument('--n-epochs', type=int, default=14000, help='the number of epochs to train the agent')
     parser.add_argument('--n-batches', type=int, default=200, help='the times to update the network')
-    parser.add_argument('--save-interval', type=int, default=5, help='the interval that save the trajectory')
     parser.add_argument('--seed', type=int, default=123, help='random seed')
 
     parser.add_argument('--replay-strategy', type=str, default='future', help='the HER strategy')

@@ -161,12 +161,11 @@ class QNetWrapper(nn.Module):
         super(QNetWrapper, self).__init__()
         self.base = Qnet(env_params, args)
         self.args = args
-        self.scale = nn.Parameter(torch.Tensor((1.,)))
         self.gamma = args.gamma
     def forward(self, obs, goal):
         dist = self.base(obs, goal)
         self.alpha = np.log(self.gamma)
-        qval = -(1-torch.exp(dist * self.scale * self.alpha))/(1-self.gamma)
+        qval = -(1-torch.exp(dist * self.alpha))/(1-self.gamma)
         return qval
 
 

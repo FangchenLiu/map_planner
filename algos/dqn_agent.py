@@ -16,7 +16,7 @@ from goal_env.recorder import play
 
 
 class dqn_agent:
-    def __init__(self, args, env, env_params, test_env, resume=False, resume_epoch=0):
+    def __init__(self, args, env, env_params, test_env):
         self.args = args
         self.device = args.device
         self.env = env
@@ -24,18 +24,18 @@ class dqn_agent:
         self.env_params = env_params
         self.action_n = env.action_space.n
 
-        self.resume = resume
-        self.resume_epoch = resume_epoch
+        self.resume = args.resume
+        self.resume_epoch = args.resume_epoch
         self.init_qnets()
         if self.resume == True:
+            print('resume from stored models ...')
             self.Q_network.load_state_dict(
                 torch.load(self.args.path + '/q_model_' + str(self.resume_epoch) + '.pt')[0])
             self.targetQ_network.load_state_dict(
                 torch.load(self.args.path + '/q_model_' + str(self.resume_epoch) + '.pt')[0])
 
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
-        self.writer = SummaryWriter(log_dir='runs/dqn' + current_time + '_mc' + str(args.gamma) + '_' + str(
-            args.plan_rate) + '_' + str(args.fps))
+        self.writer = SummaryWriter(log_dir='runs/dqn' + current_time + '_mc' + str(args.gamma) + '_' + str(args.fps))
         if not os.path.exists(self.args.save_dir):
             os.mkdir(self.args.save_dir)
             # path to save the model
@@ -51,14 +51,9 @@ class dqn_agent:
         self.her_module = her_sampler(self.args.replay_strategy, self.args.replay_k, self.args.distance)
         # create the replay buffer
         self.buffer = replay_buffer(self.env_params, self.args.buffer_size, self.her_module.sample_her_transitions)
-        if args.fps == 1:
-            self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=True, \
+        self.planner_policy = Planner(agent=self, replay_buffer=self.buffer, fps=args.fps, \
                                           clip_v=args.clip_v, n_landmark=args.landmark,
-                                          initial_sample=args.initial_sample, model=True)
-        else:
-            self.planner_policy = Planner(agent=self, framebuffer=self.buffer, fps=False, \
-                                          clip_v=args.clip_v, n_landmark=args.landmark,
-                                          initial_sample=args.initial_sample, model=True)
+                                          initial_sample=args.initial_sample)
 
     def init_qnets(self):
         self.Q_network = QNetWrapper(self.env_params, self.args).to(self.device)
@@ -182,11 +177,10 @@ class dqn_agent:
         td_loss.backward()
         self.q_optim.step()
 
-    '''
     def _eval_agent(self, policy=None):
         if policy is None:
-            policy = self.planner_policy
-            self.planner_policy.reset()
+            policy = self.test_policy
+
         total_success_rate = []
         for _ in range(self.args.n_test_rollouts):
             per_success_rate = []
@@ -197,7 +191,7 @@ class dqn_agent:
             for _ in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
-                    actions = self.test_policy(act_obs, act_g)
+                    actions = policy(act_obs, act_g)
                 observation_new, _, _, info = self.env.step(actions.squeeze(0))
                 obs = observation_new['observation']
                 g = observation_new['desired_goal']
@@ -213,7 +207,8 @@ class dqn_agent:
         total_success_rate = []
         if policy is None:
             policy = self.planner_policy
-            self.planner_policy.reset()
+            policy.reset()
+
         for _ in range(self.args.n_test_rollouts):
             per_success_rate = []
             self.planner_policy.reset()
@@ -234,7 +229,6 @@ class dqn_agent:
         total_success_rate = np.array(total_success_rate)
         global_success_rate = np.mean(total_success_rate[:, -1])
         return global_success_rate
-    '''
 
     def pairwise_value(self, obs, goal):
         assert obs.shape[0] == goal.shape[0]

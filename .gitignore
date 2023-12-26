@@ -118,12 +118,9 @@ venv.bak/
 
 #saved_model
 *.pth
-
 *.pt
 
 *.log
 *.avi
-localrender.py
-*.haosu-storm
 .idea/
 runs/

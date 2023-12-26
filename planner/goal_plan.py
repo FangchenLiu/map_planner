@@ -11,20 +11,17 @@ def transform(p):
     return (p + 4)/24
 
 class Planner:
-    def __init__(self, agent, framebuffer, heat=0.7, n_landmark=200, initial_sample=1000, fps=False, clip_v=-30,
-                 fixed_landmarks=None, test_policy=False):
+    def __init__(self, agent, replay_buffer, heat=0.9, n_landmark=200, initial_sample=1000, fps=False, clip_v=-4,
+                 fixed_landmarks=None, test_policy=True):
         self.agent = agent
         self.explore_policy = agent.explore_policy
-        self.framebuffer = framebuffer
+        self.replay_buffer = replay_buffer
 
         self.n_landmark = n_landmark
         self.initial_sample = initial_sample
         self.fixed_landmarks = fixed_landmarks
         self.fps = fps
         self.clip_v = clip_v
-        #print(self.clip_v)
-        self.cluster = False
-        self.n_cluster = 1
         self.heat = heat
         self.flag = None
         self.saved_goal = None
@@ -87,10 +84,10 @@ class Planner:
         self.saved_goal = goal
 
         if self.fixed_landmarks is None:
-            landmarks = self.framebuffer.get_all_data()['ag']
+            landmarks = self.replay_buffer.get_all_data()['ag']
             landmarks = landmarks.reshape(-1, landmarks.shape[2])
 
-            state = self.framebuffer.get_all_data()['obs']
+            state = self.replay_buffer.get_all_data()['obs']
             state = state.reshape(-1, state.shape[2])
 
 
@@ -112,13 +109,6 @@ class Planner:
             #raise NotImplementedError
         #print('reset explore policy for given goal')
 
-        kmeans = KMeans(n_clusters=self.n_cluster, random_state=0).fit(landmarks)
-        centroids = kmeans.cluster_centers_.tolist()
-        labels = kmeans.labels_.tolist()
-        labels.append(self.n_cluster)
-        self.labels = torch.Tensor(np.array(labels)).to(self.agent.device)
-        centroids.append(goal)
-        self.centroids = torch.Tensor(np.array(centroids)).to(self.agent.device)
         state = torch.Tensor(state).to(self.agent.device)
         landmarks = torch.Tensor(landmarks).to(self.agent.device)
         gg = torch.Tensor(goal).to(self.agent.device)[None,:]
@@ -147,11 +137,6 @@ class Planner:
         dists = torch.where(torch.abs(mat2) > 0, dists, torch.tensor((-100000.,)).to(self.agent.device))
         return dists
     '''
-    def cluster_clip(self, labels, dists):
-        mat1 = labels.expand(labels.size(0), labels.size(0))
-        mat2 = mat1.transpose(1, 0) - mat1
-        dists = torch.where(torch.abs(mat2) > 0, dists, torch.tensor((-100000.,)).to(self.agent.device))
-        return dists
 
     def visualize_planner(self, dists, flag):
         IMAGE_SIZE = 512
@@ -177,8 +162,6 @@ class Planner:
         expand_obs = obs.expand(len(self.landmarks), *obs.shape[1:])
         landmarks = self.landmarks
         obs2ld = self.clip_dist(self.agent.pairwise_value(expand_obs, landmarks), reserve=False)
-
-        obs2ld[:-1] += -1000000 * (obs2ld[:-1] > -10).float()
         dist = obs2ld + self.dists
         #print(dist)
         if obs2ld[-1] < -10:
@@ -186,6 +169,5 @@ class Planner:
             idx = Categorical(torch.softmax(dist * self.heat, dim=-1)).sample((1,))
             goal = self.landmarks[idx]
         else:
-            #print('ultimate')
             goal = goal
         return self.policy(obs, goal)
