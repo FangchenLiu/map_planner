@@ -12,7 +12,7 @@ def transform(p):
 
 class Planner:
     def __init__(self, agent, replay_buffer, heat=0.9, n_landmark=200, initial_sample=1000, fps=False, clip_v=-4,
-                 fixed_landmarks=None, test_policy=True):
+                 fixed_landmarks=None, test_policy=False):
         self.agent = agent
         self.explore_policy = agent.explore_policy
         self.replay_buffer = replay_buffer

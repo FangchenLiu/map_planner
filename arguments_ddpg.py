@@ -27,19 +27,19 @@ def get_args():
     parser.add_argument('--gamma', type=float, default=0.98, help='the discount factor')
     parser.add_argument('--action-l2', type=float, default=0.5, help='l2 reg')
     parser.add_argument('--lr-actor', type=float, default=0.0002, help='the learning rate of the actor')
-    parser.add_argument('--lr-critic', type=float, default=0.0002, help='the learning rate of the critic')
+    parser.add_argument('--lr-critic', type=float, default=0.0001, help='the learning rate of the critic')
     parser.add_argument('--polyak', type=float, default=0.99, help='the average coefficient')
     parser.add_argument('--n-test-rollouts', type=int, default=10, help='the number of tests')
 
     parser.add_argument('--metric', type=str, default='MLP', help='the metric for the distance embedding')
     parser.add_argument('--device', type=str, default="cpu", help='cuda device')
 
-    parser.add_argument('--lr_decay_actor', type=int, default=30000, help='actor learning rate decay')
-    parser.add_argument('--lr_decay_critic', type=int, default=30000, help='critic learning rate decay')
-    parser.add_argument('--layer', type=int, default=5, help='number of layers for critic')
+    parser.add_argument('--lr_decay_actor', type=int, default=3000, help='actor learning rate decay')
+    parser.add_argument('--lr_decay_critic', type=int, default=3000, help='critic learning rate decay')
+    parser.add_argument('--layer', type=int, default=6, help='number of layers for critic')
 
     parser.add_argument('--period', type=int, default=3, help='target update period')
-    parser.add_argument('--distance', type=float, default=0.2,  help='distance threshold for HER')
+    parser.add_argument('--distance', type=float, default=0.1,  help='distance threshold for HER')
 
     parser.add_argument('--resume', action='store_true', help='resume or not')
     # Will be considered only if resume is True
