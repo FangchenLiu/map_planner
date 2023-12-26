@@ -71,9 +71,9 @@ class ddpg_agent:
 
     def learn(self):
         for epoch in range(self.start_epoch, self.args.n_epochs):
-            if epoch > 2000 and epoch % self.args.lr_decay_actor == 0:
+            if epoch > 0 and epoch % self.args.lr_decay_actor == 0:
                 self.adjust_lr_actor(epoch)
-            if epoch > 2000 and epoch % self.args.lr_decay_critic == 0:
+            if epoch > 0 and epoch % self.args.lr_decay_critic == 0:
                 self.adjust_lr_critic(epoch)
 
             ep_obs, ep_ag, ep_g, ep_actions = [], [], [], []
@@ -85,7 +85,10 @@ class ddpg_agent:
             for t in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
-                    action = self.explore_policy(act_obs, act_g)
+                    if np.random.randn() < self.args.plan_eps and self.buffer.current_size > self.args.initial_sample:
+                        action = self.planner_policy(act_obs, act_g)
+                    else:
+                        action = self.explore_policy(act_obs, act_g)
                     # feed the actions into the environment
                 observation_new, _, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
@@ -208,16 +211,16 @@ class ddpg_agent:
         # the actor loss
         actions_real = self.actor_network(obs_cur, g_cur)
         actor_loss = -self.critic_network(obs_cur, g_cur, actions_real).mean()
-        actor_loss += self.args.action_l2 * (actions_real / self.env_params['action_max']).pow(2).mean()
+        # actor_loss += self.args.action_l2 * (actions_real / self.env_params['action_max']).pow(2).mean()
         # start to update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 0.8)
+        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 1)
         self.actor_optim.step()
         # update the critic_network
         self.critic_optim.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 0.8)
+        #torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 1)
         self.critic_optim.step()
 
     # do the evaluation

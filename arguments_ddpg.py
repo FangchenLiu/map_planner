@@ -19,6 +19,7 @@ def get_args():
 
     parser.add_argument('--noise-eps', type=float, default=0.2, help='noise factor for Gaussian')
     parser.add_argument('--random-eps', type=float, default=0.2, help="prob for acting randomly")
+    parser.add_argument('--plan-eps', type=float, default=0.0, help="prob of using planner when training")
 
     parser.add_argument('--buffer-size', type=int, default=int(1e6), help='the size of the buffer')
     parser.add_argument('--replay-k', type=int, default=5, help='ratio to be replaced')
@@ -27,15 +28,15 @@ def get_args():
     parser.add_argument('--gamma', type=float, default=0.98, help='the discount factor')
     parser.add_argument('--action-l2', type=float, default=0.5, help='l2 reg')
     parser.add_argument('--lr-actor', type=float, default=0.0002, help='the learning rate of the actor')
-    parser.add_argument('--lr-critic', type=float, default=0.0001, help='the learning rate of the critic')
+    parser.add_argument('--lr-critic', type=float, default=0.0002, help='the learning rate of the critic')
     parser.add_argument('--polyak', type=float, default=0.99, help='the average coefficient')
     parser.add_argument('--n-test-rollouts', type=int, default=10, help='the number of tests')
 
     parser.add_argument('--metric', type=str, default='MLP', help='the metric for the distance embedding')
     parser.add_argument('--device', type=str, default="cpu", help='cuda device')
 
-    parser.add_argument('--lr_decay_actor', type=int, default=3000, help='actor learning rate decay')
-    parser.add_argument('--lr_decay_critic', type=int, default=3000, help='critic learning rate decay')
+    parser.add_argument('--lr-decay-actor', type=int, default=3000, help='actor learning rate decay')
+    parser.add_argument('--lr-decay-critic', type=int, default=3000, help='critic learning rate decay')
     parser.add_argument('--layer', type=int, default=6, help='number of layers for critic')
 
     parser.add_argument('--period', type=int, default=3, help='target update period')

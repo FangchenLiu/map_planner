@@ -27,8 +27,10 @@ class Planner:
         self.saved_goal = None
         if test_policy:
             self.policy = self.agent.test_policy
+            print('use test policy among landmarks')
         else:
             self.policy = self.agent.explore_policy
+            print('use explore policy among landmarks')
         self.time = 0
 
     def clip_dist(self, dists, reserve=True):
