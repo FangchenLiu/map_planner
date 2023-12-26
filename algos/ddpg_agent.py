@@ -1,8 +1,6 @@
+import torch
 import os
 import sys
-
-import torch
-
 sys.path.append('../')
 from datetime import datetime
 from tensorboardX import SummaryWriter
@@ -10,11 +8,14 @@ import numpy as np
 from algos.networks import *
 from algos.replay_buffer import replay_buffer
 from algos.her import her_sampler
+from goal_env.recorder import play
+from matplotlib import pyplot as plt
+from planner.sample import *
 from planner.vis_pointmaze import vis_pointmaze
 from planner.goal_plan import *
 
 class ddpg_agent:
-    def __init__(self, args, env, env_params, test_env, vae_net, resume=False, resume_epoch_actor=0, resume_epoch_critic=0):
+    def __init__(self, args, env, env_params, test_env, resume=False, resume_epoch_actor=0, resume_epoch_critic=0):
         self.args = args
         self.env = env
         self.test_env = test_env
@@ -25,12 +26,10 @@ class ddpg_agent:
         self.resume_epoch_critic = resume_epoch_critic
         current_time = datetime.now().strftime('%b%d_%H-%M-%S')
         self.writer = SummaryWriter(log_dir='runs/ddpg'+current_time + '_' + str(args.env_name) + \
-                                            str(args.lr_critic)+'_' + str(args.gamma)+'_'+str(args.plan_rate)+'_'+ \
+                                            str(args.lr_critic)+'_' + str(args.gamma)+'_'+str(args.plan_rate)+'_'+\
                                             str(args.fps))
         if not os.path.exists(self.args.save_dir):
             os.mkdir(self.args.save_dir)
-
-        self.vae = vae_net
             # path to save the model
         self.model_path = os.path.join(self.args.save_dir, self.args.env_name+"_"+current_time)
         if not os.path.exists(self.model_path):
@@ -49,7 +48,6 @@ class ddpg_agent:
         self.critic_network.to(self.device)
         self.actor_target_network.to(self.device)
         self.critic_target_network.to(self.device)
-        self.vae.to(self.device)
         # create the optimizer
 
         self.actor_optim = torch.optim.Adam(self.actor_network.parameters(), lr=self.args.lr_actor)
@@ -82,7 +80,6 @@ class ddpg_agent:
         if self.resume == True:
             self.critic_network.load_state_dict(torch.load(self.args.path + '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
             self.critic_target_network.load_state_dict(torch.load(self.args.path + '/critic_model_' +str(self.resume_epoch_critic) +'.pt')[0])
-            self.vae.load_state_dict(torch.load('saved_models/AntMazeTest-v1_0.1_models.pt')[4])
 
     def adjust_lr_actor(self, epoch):
         lr_actor = self.args.lr_actor * (0.5 ** (epoch // self.args.lr_decay_actor))
@@ -106,7 +103,7 @@ class ddpg_agent:
             obs = observation['observation']
             ag = observation['achieved_goal']
             g = observation['desired_goal']
-            # start to collect samples
+                    # start to collect samples
             for t in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
@@ -115,7 +112,7 @@ class ddpg_agent:
                 observation_new, _, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
                 ag_new = observation_new['achieved_goal']
-                # append rollouts
+                    # append rollouts
                 ep_obs.append(obs.copy())
                 ep_ag.append(ag.copy())
                 ep_g.append(g.copy())
@@ -142,11 +139,12 @@ class ddpg_agent:
             if epoch % 10 == 0:
                 success_rate = self._eval_agent()
                 test_sucess_rate = self._eval_test_agent()
+                #self.store_figure(epoch)
                 print('[{}] epoch is: {}, eval success rate is: {:.3f}, {:.3f}'.format(datetime.now(), epoch, success_rate, test_sucess_rate))
                 torch.save([self.critic_network.state_dict()], \
                            self.model_path + '/critic_model_' +str(epoch) +'.pt')
                 torch.save([self.actor_network.state_dict()], \
-                           self.model_path + '/actor_model_' +str(epoch) +'.pt')
+                            self.model_path + '/actor_model_' +str(epoch) +'.pt')
                 torch.save(self.buffer, self.model_path + '/replaybuffer.pt')
                 self.writer.add_scalar('data/train' + self.args.env_name + self.args.metric, success_rate, epoch)
                 self.writer.add_scalar('data/test' + self.args.env_name +  self.args.metric, test_sucess_rate, epoch)
@@ -166,7 +164,7 @@ class ddpg_agent:
         # random actions...
         if np.random.randn() < 0.2:
             action = np.random.uniform(low=-self.env_params['action_max'], high=self.env_params['action_max'], \
-                                       size=self.env_params['action'])
+                                           size=self.env_params['action'])
         return action
 
     def explore_policy(self, obs, goal, epoch):
@@ -237,12 +235,12 @@ class ddpg_agent:
         # start to update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 0.8)
+        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 1)
         self.actor_optim.step()
         # update the critic_network
         self.critic_optim.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 0.8)
+        torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 1)
         self.critic_optim.step()
 
     # do the evaluation
@@ -264,7 +262,7 @@ class ddpg_agent:
             for _ in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
-                    actions = self.test_policy(act_obs, act_g)
+                    actions = policy(act_obs, act_g)
                 observation_new, _, _, info = self.env.step(actions)
                 obs = observation_new['observation']
                 g = observation_new['desired_goal']
@@ -282,9 +280,7 @@ class ddpg_agent:
             self.planner_policy.reset()
 
         total_success_rate = []
-        test_demo = []
         for _ in range(self.args.n_test_rollouts):
-            one_traj = []
             per_success_rate = []
             observation = self.test_env.reset()
             obs = observation['observation']
@@ -292,21 +288,16 @@ class ddpg_agent:
             for num in range(self.env_params['max_test_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
-                    next_goal = self.vae(act_obs[:, :2])
                     #print(act_obs.shape, act_g.shape, act_obs, act_g)
-                    actions = self.test_policy(act_obs, next_goal)
+                    actions = policy(act_obs, act_g)
                 observation_new, rew, done, info = self.test_env.step(actions)
                 obs = observation_new['observation']
-                one_traj.append(np.hstack([obs, actions]))
                 g = observation_new['desired_goal']
                 per_success_rate.append(info['is_success'])
             total_success_rate.append(per_success_rate)
-            test_demo.append(np.stack(one_traj))
             #print(per_success_rate, total_success_rate)
         total_success_rate = np.array(total_success_rate)
         global_success_rate = np.mean(total_success_rate[:, -1])
-        #print('collected demo length', len(test_demo))
-        #torch.save(test_demo, self.model_path + '/demo_'+str(global_success_rate)+'.pt')
         return global_success_rate
 
     def pairwise_value(self, obs, goal):
@@ -319,6 +310,6 @@ class ddpg_agent:
         dist_np = vis_pointmaze(self)
         dist_np = torch.tensor(dist_np, dtype=torch.float32)
         dist_np = dist_np.permute(2, 0, 1)
-        # add_image(tag, img_tensor, global_step=None, walltime=None, dataformats='CHW')
+        #add_image(tag, img_tensor, global_step=None, walltime=None, dataformats='CHW')
         self.writer.add_image('image/pointmaze' + self.args.env_name + self.args.metric, dist_np, \
                               global_step=epoch)
