@@ -1,16 +1,11 @@
-import torch
 import os
 import sys
 sys.path.append('../')
 from datetime import datetime
 from tensorboardX import SummaryWriter
-import numpy as np
-from algos.networks import *
+from models.networks import *
 from algos.replay_buffer import replay_buffer
 from algos.her import her_sampler
-from goal_env.recorder import play
-from matplotlib import pyplot as plt
-from planner.sample import *
 from planner.vis_pointmaze import vis_pointmaze
 from planner.goal_plan import *
 

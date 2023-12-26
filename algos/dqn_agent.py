@@ -1,18 +1,15 @@
-import torch
 import os
 import sys
 sys.path.append('../')
 
 from datetime import datetime
-import numpy as np
-from algos.networks import *
+from models.networks import *
 from algos.replay_buffer import replay_buffer
 from algos.her import her_sampler
 import random
 from tensorboardX import SummaryWriter
 from planner.goal_plan import *
 import torch
-from goal_env.recorder import play
 
 
 class dqn_agent:
