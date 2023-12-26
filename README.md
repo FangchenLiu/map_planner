@@ -1,5 +1,6 @@
 # Mapping State Space using Landmarks for Universal Goal Reaching
-Our method is designed for goal-reaching problem, in which we combine low-level RL policy with search on a graph-based environment map.
+We combine low-level RL policy with search algorithm to solve the goal-reaching problem. We build a graph-based environment map
+from past experience which couples sampling and end-to-end training.
 
 ## Paper
 This paper is accepted by NeurIPS 2019. For more details, please refer to [our paper](http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching).
@@ -31,4 +32,6 @@ If you find it useful, please consider to cite our paper.
 - [Pytorch Baseline implemented by TianhongDai](https://github.com/TianhongDai/hindsight-experience-replay)
 
 ## Pretrained Model
-- Will upload soon
+- The pretrained model for PointMaze with the default architecture can be founded [here](https://drive.google.com/drive/folders/1S00JbuG2KHM5OhGhfwVkyKK0lcny64_M?usp=sharing).
+This is trained with 0.4M interaction steps.
+- The pretrained model for AntMaze: will upload soon. 

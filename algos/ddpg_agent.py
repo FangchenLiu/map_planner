@@ -215,7 +215,7 @@ class ddpg_agent:
         # start to update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 1)
+        # torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 1)
         self.actor_optim.step()
         # update the critic_network
         self.critic_optim.zero_grad()
