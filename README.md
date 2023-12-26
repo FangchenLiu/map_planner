@@ -1,11 +1,10 @@
 # Mapping State Space using Landmarks for Universal Goal Reaching
-We introduce a method to combine low-level RL policy with search algorithm.
+Our method is designed for goal-reaching problem, in which we combine low-level RL policy with search on a graph-based environment map.
 
 ## Paper
-This paper is accepted by NeurIPS 2019. For more details, please refer to this link: 
-[http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching](http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching).
+This paper is accepted by NeurIPS 2019. For more details, please refer to [this link](http://papers.nips.cc/paper/8469-mapping-state-space-using-landmarks-for-universal-goal-reaching).
 
-## Run the code
+## Run
 We provide the scripts for PointMaze and AntMaze. 
 ```bash
 ./scripts/train_pointmaze.sh
