@@ -48,8 +48,8 @@ def get_args():
 
     #args for the planner
     parser.add_argument('--fps', action='store_true', help='if use fps in the planner')
-    parser.add_argument('--landmark', type=int, default=500, help="number of landmarks")
-    parser.add_argument('--initial-sample', type=int, default=2000, help="number of initial candidates for landmarks")
-    parser.add_argument('--clip-v', type=float, default=-22., help="clip bound for the planner")
+    parser.add_argument('--landmark', type=int, default=200, help="number of landmarks")
+    parser.add_argument('--initial-sample', type=int, default=1000, help="number of initial candidates for landmarks")
+    parser.add_argument('--clip-v', type=float, default=-4., help="clip bound for the planner")
     args = parser.parse_args()
     return args

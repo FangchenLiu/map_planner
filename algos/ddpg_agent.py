@@ -81,7 +81,7 @@ class ddpg_agent:
             obs = observation['observation']
             ag = observation['achieved_goal']
             g = observation['desired_goal']
-                    # start to collect samples
+
             for t in range(self.env_params['max_timesteps']):
                 with torch.no_grad():
                     act_obs, act_g = self._preproc_inputs(obs, g)
@@ -90,7 +90,7 @@ class ddpg_agent:
                 observation_new, _, _, info = self.env.step(action)
                 obs_new = observation_new['observation']
                 ag_new = observation_new['achieved_goal']
-                    # append rollouts
+                # append rollouts
                 ep_obs.append(obs.copy())
                 ep_ag.append(ag.copy())
                 ep_g.append(g.copy())
@@ -101,13 +101,12 @@ class ddpg_agent:
             ep_obs.append(obs.copy())
             ep_ag.append(ag.copy())
 
-            # convert them into arrays
             mb_obs = np.array([ep_obs])
             mb_ag = np.array([ep_ag])
             mb_g = np.array([ep_g])
             mb_actions = np.array([ep_actions])
             self.buffer.store_episode([mb_obs, mb_ag, mb_g, mb_actions])
-            #self.store_figure(epoch)
+            # self.store_figure(epoch)
             for n_batch in range(self.args.n_batches):
                 self._update_network()
                 if n_batch % self.args.period == 0:
@@ -209,16 +208,16 @@ class ddpg_agent:
         # the actor loss
         actions_real = self.actor_network(obs_cur, g_cur)
         actor_loss = -self.critic_network(obs_cur, g_cur, actions_real).mean()
-        #actor_loss += self.args.action_l2 * (actions_real / self.env_params['action_max']).pow(2).mean()
+        actor_loss += self.args.action_l2 * (actions_real / self.env_params['action_max']).pow(2).mean()
         # start to update the network
         self.actor_optim.zero_grad()
         actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 1)
+        torch.nn.utils.clip_grad_norm_(self.actor_network.parameters(), 0.8)
         self.actor_optim.step()
         # update the critic_network
         self.critic_optim.zero_grad()
         critic_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 1)
+        torch.nn.utils.clip_grad_norm_(self.critic_network.parameters(), 0.8)
         self.critic_optim.step()
 
     # do the evaluation
