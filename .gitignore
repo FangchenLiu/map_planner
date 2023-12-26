@@ -55,7 +55,6 @@ coverage.xml
 *.png
 .idea/
 *.npy
-*.xml
 # Django stuff:
 *.log
 local_settings.py
